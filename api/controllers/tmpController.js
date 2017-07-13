@@ -13,8 +13,8 @@ exports.get_readings = function(req, res) {
 
 exports.post_readings = function(req, res) {
 
-    logger.debug('entityId: ' + req.query.entityId);
-    logger.debug('celsius reading: ', req.query.celsius);
+    logger.debug('entityId: ' + req.params.entityId);
+    logger.debug('celsius reading: ', req.params.celsius);
 
     res.send('reached POST')
 };
