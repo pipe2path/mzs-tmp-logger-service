@@ -5,11 +5,9 @@
 module.exports = function(app) {
     var tmpLogger = require('../controllers/tmpController.js');
 
-
     // Routes
     app.route('/temperature')
         .get(tmpLogger.get_readings)
         .post(tmpLogger.post_readings);
-
 
 };
