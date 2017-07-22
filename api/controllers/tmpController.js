@@ -11,6 +11,9 @@ var mongoClient = require('mongodb');
 var temperature = require('../models/temperature.js');
 
 exports.get_readings = function(req, res) {
+
+    res.setHeader('Access-Control-Allow-Origin','*');
+
     GetTemperatureData(function(items){
         res.send(items);
     });
@@ -31,6 +34,8 @@ exports.post_readings = function(req, res) {
 
     var entityId = req.query.entityId;
     var celsius = req.query.celsius;
+
+    res.setHeader('Access-Control-Allow-Origin','*');
 
     logger.debug('entityId: ' + entityId);
     logger.debug('celsius reading: ' + celsius );
