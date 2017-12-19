@@ -23,7 +23,9 @@ var GetTemperatureData = function(callback){
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
         if (err) {console.log(err)};
         var temperature = db.collection('temperatureReadings');
-        temperature.find().sort({dateTimeStamp:-1}).limit(10).toArray(function(err, items){
+
+        // can use .limit(10) to limit to 10 items
+        temperature.find().sort({dateTimeStamp:-1}).toArray(function(err, items){
             return callback(items);
         });
     });
