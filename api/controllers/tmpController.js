@@ -36,17 +36,20 @@ exports.post_readings = function(req, res) {
 
     var entityId = req.query.entityId;
     var celsius = req.query.celsius;
+    var voltage = req.query.voltage;
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
     logger.debug('entityId: ' + entityId);
     logger.debug('celsius reading: ' + celsius );
+    logger.debug('voltage reading: ' + voltage );
 
     var dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
         ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
-    var readingsData = new temperature({   dateTimeStamp: dateLocal,
-        entityId: entityId,
-        readingCelsius: celsius});
+    var readingsData = new temperature({ dateTimeStamp: dateLocal,
+            entityId: entityId,
+            readingCelsius: celsius,
+            voltage: voltage });
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
