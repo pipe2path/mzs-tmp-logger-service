@@ -14,24 +14,12 @@ exports.get_readings = function(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
-    GetTemperatureData2(function(items){
+    GetTemperatureData(function(items){
         res.send(items);
     });
 };
 
 var GetTemperatureData = function(callback){
-    return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-        if (err) {console.log(err)};
-        var temperature = db.collection('temperatureReadings');
-
-        // can use .limit(10) to limit to 10 items
-        temperature.find().sort({dateTimeStamp:-1}).toArray(function(err, items){
-            return callback(items);
-        });
-    });
-};
-
-var GetTemperatureData2 = function(callback){
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
         if (err) {console.log(err)};
         //var temperature = db.collection('temperatureReadings');
