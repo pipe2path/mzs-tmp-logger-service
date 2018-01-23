@@ -49,8 +49,8 @@ exports.post_readings = function(req, res) {
     var entityId = req.query.entityId;
     var celsius = req.query.celsius;
     var voltage = req.query.voltage;
-
-    var voltageOffset = 0.71;
+    var voltageOffset = 0.81;
+    var trueVoltage=parseFloat(voltage) + voltageOffset;
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
@@ -63,7 +63,7 @@ exports.post_readings = function(req, res) {
     var readingsData = new temperature({ dateTimeStamp: dateLocal,
             entityId: entityId,
             readingCelsius: celsius,
-            voltage: voltage + voltageOffset });
+            voltage: trueVoltage });
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
