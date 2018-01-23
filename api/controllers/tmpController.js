@@ -50,6 +50,8 @@ exports.post_readings = function(req, res) {
     var celsius = req.query.celsius;
     var voltage = req.query.voltage;
 
+    var voltageOffset = 0.71;
+
     res.setHeader('Access-Control-Allow-Origin','*');
 
     logger.debug('entityId: ' + entityId);
@@ -61,7 +63,7 @@ exports.post_readings = function(req, res) {
     var readingsData = new temperature({ dateTimeStamp: dateLocal,
             entityId: entityId,
             readingCelsius: celsius,
-            voltage: voltage });
+            voltage: voltage + voltageOffset });
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
