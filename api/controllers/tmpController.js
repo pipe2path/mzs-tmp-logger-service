@@ -50,7 +50,7 @@ exports.post_readings = function(req, res) {
     var celsius = req.query.celsius;
     var voltage = req.query.voltage;
     var voltageOffset = 0.81;
-    var trueVoltage=parseFloat(voltage) + voltageOffset;
+    var trueVoltage=parseFloat(voltage).toFixed(2) + voltageOffset;
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
