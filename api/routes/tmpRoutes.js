@@ -10,4 +10,7 @@ module.exports = function(app) {
         .get(tmpLogger.get_readings)
         .post(tmpLogger.post_readings);
 
+    app.route('/temperature/id/:id')
+        .get(tmpLogger.get_readingsById);
+
 };

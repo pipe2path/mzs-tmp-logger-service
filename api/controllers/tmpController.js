@@ -14,10 +14,31 @@ exports.get_readings = function(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
-    GetTemperatureData(function(items){
+    GetTemperatureData(function(items) {
         res.send(items);
     });
 };
+
+exports.get_readingsById = function(req, res) {
+
+    var id = req.params.id;
+    GetTemperatureByEntity(id, function(items){
+        res.send(items);
+    });
+};
+
+
+var GetTemperatureByEntity = function(id, callback) {
+    return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function (err, db) {
+        if (err) {console.log(err)};
+
+        db.collection('temperatureReadings').find({'entityId': id})
+                    .sort({dateTimeStamp: -1}).toArray(function(err, arr){
+                        callback(arr);
+            });
+    });
+};
+
 
 var GetTemperatureData = function(callback){
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
