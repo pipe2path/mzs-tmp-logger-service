@@ -4,6 +4,7 @@
 'use strict';
 module.exports = function(app) {
     var tmpLogger = require('../controllers/tmpController.js');
+    var entityLogger = require('../controllers/entityController.js');
 
     // Routes
     app.route('/temperature')
@@ -12,5 +13,8 @@ module.exports = function(app) {
 
     app.route('/temperature/id/:id')
         .get(tmpLogger.get_readingsById);
+
+    app.route('/entity')
+        .get(entityLogger.get_entities)
 
 };
