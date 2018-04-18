@@ -22,8 +22,27 @@ var GetEntityData = function(callback){
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function (err, db) {
         if (err) {console.log(err)};
 
-        db.collection('entity').find({}).toArray(function(err, arr){
-            callback(arr);
+        var entityId = 0;
+        var entities=[];
+        db.collection('entity').find({}).sort({entityId: 1}).toArray(function(err, arr){
+            for(var i=0;i<arr.length-1;i++){
+                entityId = parseInt(arr[i].entityId);
+                entities.push({entityId: entityId, name: arr[i].name});
+            }
+            entities = entities.sort(GetSortOrder("entityId"));
+            callback(entities);
         });
     });
+}
+
+//sort by entityId
+function GetSortOrder(prop) {
+    return function(a, b) {
+        if (a[prop] > b[prop]) {
+            return 1;
+        } else if (a[prop] < b[prop]) {
+            return -1;
+        }
+        return 0;
+    }
 }
