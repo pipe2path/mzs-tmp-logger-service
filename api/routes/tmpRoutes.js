@@ -14,6 +14,9 @@ module.exports = function(app) {
     app.route('/temperature/id/:id')
         .get(tmpLogger.get_readingsById);
 
+    app.route('/temperature_new')
+        .post(tmpLogger.post_readings_new);
+
     app.route('/entity')
         .get(entityLogger.get_entities)
 

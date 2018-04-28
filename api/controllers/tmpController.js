@@ -66,6 +66,43 @@ var GetTemperatureData = function(callback){
     });
 };
 
+exports.post_readings_new = function(req, res) {
+    var entityId ;
+    var voltageOffset = 0.81;
+    var trueVoltage ;
+    var celsius ;
+    var dateTimeStamp;
+    var recordedTime;
+
+    var data = req.body;
+    logger.debug('body: ' + data);
+
+    for(var i=data.length-1; i>=0; i--){
+        entityId = data[i].entityId;
+        celsius = data[i].tempinC;
+        trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
+        dateTimeStamp = new Date().getTime() - (i*10*60000);
+        recordedTime = convertTimestamp(dateTimeStamp);
+
+        var readingsData = new temperature({
+            dateTimeStamp: recordedTime,
+            entityId: entityId,
+            readingCelsius: celsius,
+            voltage: trueVoltage
+        });
+
+        mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+            if (err) {console.log(err)};
+            var temperature = db.collection('temperatureReadings');
+
+            temperature.insertOne(readingsData);
+        });
+    }
+
+    res.setHeader('Access-Control-Allow-Origin','*');
+
+    res.send("Temperature reading added");
+};
 
 exports.post_readings = function(req, res) {
 
@@ -117,4 +154,31 @@ function insSortJsonArr(jsonArray, key, isGreatestToLeast){
         jsonArray[j] = next;
     }
     return jsonArray;
+}
+
+function convertTimestamp(timestamp) {
+    var d = new Date(timestamp),	// Convert the passed timestamp to milliseconds
+        yyyy = d.getFullYear(),
+        mm = ('0' + (d.getMonth() + 1)).slice(-2),	// Months are zero based. Add leading 0.
+        dd = ('0' + d.getDate()).slice(-2),			// Add leading 0.
+        hh = d.getHours(),
+        h = hh,
+        min = ('0' + d.getMinutes()).slice(-2),		// Add leading 0.
+        ampm = 'AM',
+        time;
+
+    if (hh > 12) {
+        h = hh - 12;
+        ampm = 'PM';
+    } else if (hh === 12) {
+        h = 12;
+        ampm = 'PM';
+    } else if (hh == 0) {
+        h = 12;
+    }
+
+    // ie: 2013-02-18, 8:35 AM
+    time = yyyy + '-' + mm + '-' + dd + ', ' + h + ':' + min + ' ' + ampm;
+
+    return time;
 }
