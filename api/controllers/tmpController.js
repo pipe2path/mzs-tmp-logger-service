@@ -77,6 +77,7 @@ exports.post_readings_new = function(req, res) {
     var data = req.body;
     logger.debug('body: ' + data);
 
+    var readings = [];
     for(var i=data.length-1; i>=0; i--){
         entityId = data[i].entityId;
         celsius = data[i].tempinC;
@@ -84,20 +85,20 @@ exports.post_readings_new = function(req, res) {
         dateTimeStamp = new Date().getTime() - (i*10*60000);
         recordedTime = convertTimestamp(dateTimeStamp);
 
-        var readingsData = new temperature({
+        var reading = new temperature({
             dateTimeStamp: recordedTime,
             entityId: entityId,
             readingCelsius: celsius,
             voltage: trueVoltage
         });
-
-        mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-            if (err) {console.log(err)};
-            var temperature = db.collection('temperatureReadings');
-
-            temperature.insertOne(readingsData);
-        });
+        readings.push(reading);
     }
+
+    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+       if (err) {console.log(err)};
+            var temperature = db.collection('temperatureReadings');
+            temperature.insertMany(readings);
+    });
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
