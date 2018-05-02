@@ -83,7 +83,8 @@ exports.post_readings_new = function(req, res) {
         celsius = data[i].tempinC;
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
         dateTimeStamp = new Date().getTime() - (i*10*60000);
-        recordedTime = convertTimestamp(dateTimeStamp);
+        recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
+            ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
 
         var reading = new temperature({
             dateTimeStamp: recordedTime,
