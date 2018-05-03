@@ -23,7 +23,7 @@ exports.get_readingsById = function(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
-    var id = req.params.id;
+    var id = parseInt(req.params.id);
     GetTemperatureByEntity(id, function(items){
         res.send(items);
     });
