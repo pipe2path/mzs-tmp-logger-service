@@ -9,6 +9,9 @@ logger.level = 'debug';
 
 var mongoClient = require('mongodb');
 var temperature = require('../models/temperature.js');
+//var settings = require('../common/settings.js');
+var entity = require('../models/entity.js');
+var sinchSms = require('sinch-sms');
 
 exports.get_readings = function(req, res) {
 
@@ -67,22 +70,113 @@ var GetTemperatureData = function(callback){
 };
 
 exports.post_readings_new = function(req, res) {
+
+    var data = req.body;
+    logger.debug('body: ' + data);
+
+    var readings = prepareDataToPost(data)
+    postDataToDatabase(readings);
+
+    // check for temperature limit and process alert
+
+
+    res.setHeader('Access-Control-Allow-Origin','*');
+
+    res.send("Temperature reading added");
+};
+
+var getSettings = function(callback){
+    var result;
+    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+        if (err) {console.log(err)};
+        result = db.collection('configSettings').find().toArray(function(err, arr){
+            callback(arr)
+        });
+    });
+}
+
+var getEntity = function(entityId, callback){
+    var result;
+    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+        if (err) {console.log(err)};
+        result = db.collection('entity').find({ 'entityId': entityId}).toArray(function(err, arr){
+            callback(arr)
+        });
+    });
+}
+
+
+function checkForAlert(entityId, celsius){
+    var tempLimit, dateTimeStamp;
+    var entity;
+
+    // get tempLimit from DB
+    getEntity(function(entityId, callback){
+        entity = callback;
+        tempLimit = entity.tempLimit;
+    })
+
+    if (celsius > tempLimit ){
+        return true
+    }
+    return false;
+}
+
+function processAlert(entityId, celsius, dateRecorded){
+    var configSettings =  new configSettings();
+    var entity = new Entity();
+
+    getSettings(function(items){
+        configSettings.configSettingsId = items[0].configSettingsId;
+        configSettings.sinchKey = items[0].sinchKey;
+        configSettings.sinchPwd = items[0].sinchPwd;
+    });
+
+    getEntity(function(entityId, entityItems){
+        entity.id = entityId;
+        entity.alertPhone = entityItems.alertPhone;
+        entity.alertMsg = entityItems.alertMsg;
+    })
+
+    sinchSms = require('sinch-sms')({
+        key: sinchKey,
+        secret:sinchSecret
+    });
+
+    sinchSms.send(entity.alertPhone, entity.alertMsg + '  ' + celsius + ' recorded at ' + dataRecorded).then(function (response) {
+        console.log(response);
+    }).fail(function (error) {
+        console.log(error);
+    });
+
+
+
+}
+
+
+function postDataToDatabase(readings){
+    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+        if (err) {console.log(err)};
+        var temperature = db.collection('temperatureReadings');
+        temperature.insertMany(readings);
+    });
+}
+
+function prepareDataToPost(data){
     var entityId ;
     var voltageOffset = 0.81;
     var trueVoltage ;
     var celsius ;
     var dateTimeStamp;
     var recordedTime;
-
-    var data = req.body;
-    logger.debug('body: ' + data);
+    var timeOffset = 2;
 
     var readings = [];
     for(var i=data.length-1; i>=0; i--){
         entityId = data[i].entityId;
         celsius = data[i].tempinC;
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
-        dateTimeStamp = new Date().getTime() - (i*10*60000);
+        dateTimeStamp = new Date().getTime() - (i*timeOffset*60000);
         recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
             ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
 
@@ -93,18 +187,22 @@ exports.post_readings_new = function(req, res) {
             voltage: trueVoltage
         });
         readings.push(reading);
+
+        if (checkForAlert(entityId, celsius)){
+           processAlert(entityId, celsius, recordedTime);
+        }
     }
+    return readings;
+}
 
-    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-       if (err) {console.log(err)};
-            var temperature = db.collection('temperatureReadings');
-            temperature.insertMany(readings);
-    });
+exports.post_hightemp_alert = function(req, res){
 
-    res.setHeader('Access-Control-Allow-Origin','*');
+    var data = req.body;
+    logger.debug('body:' + data);
 
-    res.send("Temperature reading added");
-};
+    res.send ("High Temperature alert posted")
+}
+
 
 exports.post_readings = function(req, res) {
 

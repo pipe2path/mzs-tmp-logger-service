@@ -25,7 +25,7 @@ var GetEntityData = function(callback){
         var entityId = 0;
         var entities=[];
         db.collection('entity').find({}).sort({entityId: 1}).toArray(function(err, arr){
-            for(var i=0;i<arr.length-1;i++){
+            for(var i=0;i<=arr.length-1;i++){
                 entityId = parseInt(arr[i].entityId);
                 entities.push({entityId: entityId, name: arr[i].name});
             }
