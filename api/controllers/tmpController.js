@@ -32,7 +32,6 @@ exports.get_readingsById = function(req, res) {
     });
 };
 
-
 var GetTemperatureByEntity = function(id, callback) {
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function (err, db) {
         if (err) {console.log(err)};
@@ -43,7 +42,6 @@ var GetTemperatureByEntity = function(id, callback) {
             });
     });
 };
-
 
 var GetTemperatureData = function(callback){
     return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
@@ -85,6 +83,31 @@ exports.post_readings_new = function(req, res) {
     res.send("Temperature reading added");
 };
 
+function checkForAlert(entityId, celsius){
+    var tempLimit;
+
+    // get tempLimit from DB
+    getEntity(entityId, function(entity){
+        tempLimit = entity.tempLimit;
+    });
+
+    if (celsius > tempLimit ){
+        return true
+    }
+    return false;
+}
+
+var getEntity = function(entityId, callback){
+    //var result;
+    return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+        if (err) {console.log(err)};
+
+        db.collection('entity').find({ 'entityId': entityId}).toArray(function(err, arr){
+            callback(arr)
+        });
+    });
+}
+
 var getSettings = function(callback){
     var result;
     mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
@@ -93,33 +116,6 @@ var getSettings = function(callback){
             callback(arr)
         });
     });
-}
-
-var getEntity = function(entityId, callback){
-    var result;
-    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-        if (err) {console.log(err)};
-        result = db.collection('entity').find({ 'entityId': entityId}).toArray(function(err, arr){
-            callback(arr)
-        });
-    });
-}
-
-
-function checkForAlert(entityId, celsius){
-    var tempLimit, dateTimeStamp;
-    var entity;
-
-    // get tempLimit from DB
-    getEntity(function(entityId, callback){
-        entity = callback;
-        tempLimit = entity.tempLimit;
-    })
-
-    if (celsius > tempLimit ){
-        return true
-    }
-    return false;
 }
 
 function processAlert(entityId, celsius, dateRecorded){
