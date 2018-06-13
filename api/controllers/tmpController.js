@@ -77,7 +77,6 @@ exports.post_readings_new = function(req, res) {
 
     // check for temperature limit and process alert
 
-
     res.setHeader('Access-Control-Allow-Origin','*');
 
     res.send("Temperature reading added");
@@ -166,13 +165,16 @@ function prepareDataToPost(data){
     var dateTimeStamp;
     var recordedTime;
     var timeOffset = 2;
+    var j = 1;
+
 
     var readings = [];
     for(var i=data.length-1; i>=0; i--){
+        j++;
         entityId = data[i].entityId;
         celsius = data[i].tempinC;
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
-        dateTimeStamp = new Date().getTime() - (i*timeOffset*60000);
+        dateTimeStamp = new Date().getTime() - (j*timeOffset*60000);
         recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
             ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
 
