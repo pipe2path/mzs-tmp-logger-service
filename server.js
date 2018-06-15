@@ -10,11 +10,14 @@ var express = require('express'),
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var tempRoute = require('./api/routes/tmpRoutes.js');
-tempRoute(app);
+var tempRoutes = require('./api/routes/tmpRoutes.js');
+tempRoutes(app);
 
-var authRoute = require('./api/routes/authRoutes.js');
-authRoute(app);
+var authRoutes = require('./api/routes/authRoutes.js');
+authRoutes(app);
+
+var testRoutes = require('./api/routes/testRoutes.js');
+testRoutes(app);
 
 
 app.listen(port);
