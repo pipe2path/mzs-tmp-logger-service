@@ -144,11 +144,7 @@ function processAlert(entityId, celsius, dateRecorded){
     }).fail(function (error) {
         console.log(error);
     });
-
-
-
 }
-
 
 function postDataToDatabase(readings){
     mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
