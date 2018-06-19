@@ -19,5 +19,4 @@ module.exports = function(app) {
 
     app.route('/entity')
         .get(entityLogger.get_entities)
-
 };
