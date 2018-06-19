@@ -83,14 +83,15 @@ exports.post_readings_new = function(req, res) {
 };
 
 function checkForAlert(entityId, celsius){
-    var tempLimit;
+    var alertTemp, alertFlag;
 
     // get tempLimit from DB
     getEntity(entityId, function(entity){
-        tempLimit = entity.tempLimit;
+        alertTemp = entity.alertTemp;
+        alertFlag = entity.alertFlag;
     });
 
-    if (celsius > tempLimit ){
+    if (alertFlag == "true" && celsius > alertTemp ){
         return true
     }
     return false;
