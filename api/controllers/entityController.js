@@ -8,12 +8,14 @@ var logger = log4js.getLogger();
 logger.level = 'debug';
 
 var mongoClient = require('mongodb');
+var entities = [];
 
 exports.get_entities = function(req, res){
 
     res.setHeader('Access-Control-Allow-Origin','*');
 
     GetEntityData(function(items) {
+        entities = items;
         res.send(items);
     });
 }

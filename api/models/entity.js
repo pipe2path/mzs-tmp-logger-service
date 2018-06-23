@@ -5,9 +5,12 @@ function Entity(data) {
     this.city = data.city;
     this.phone = data.phone;
     this.email = data.email;
-    this.tempLimit = data.tempLimit;
+    this.alertTemp = data.alertTemp;
     this.alertPhone = data.alertPhone;
     this.alertMsg = data.alertMsg;
+    this.alertFlag = data.alertFlag;
+    this.timeOffset = data.timeOffset;
+    this.alertSMSLastSent = data.alertSMSLastSent;
 }
 
 module.exports = Entity;
