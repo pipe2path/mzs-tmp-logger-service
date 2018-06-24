@@ -111,7 +111,7 @@ function checkAndProcessAlert(entityId, celsius){
 
         // if alert flag is true and temperature is higher than what it should be and it's been 24 hours since the last alert
         if (entity.alertFlag == "true" && celsius > entity.alertTemp && alertSMSTimeDiff >= 24){
-            processAlert(entityId, celsius);
+            processAlert(entityId, celsius, alert, dateLocal);
         }
         return false;
     });
@@ -166,7 +166,7 @@ function processAlert(entityId, celsius, dateRecorded){
 
          var smsMsg = entity.alertMsg + '  ' + celsius + ' recorded at ' + dateRecorded;
          sinchSms.send(entity.alertPhone, smsMsg ).then(function (response) {
-            console.log('sinch sms response: ' + response);
+            console.log('sinch sms response: ' + response.messageId);
             }).fail(function (error) {
                 console.log('sinch sms error: ' + error);
             });
