@@ -210,12 +210,8 @@ function prepareDataToPost(data){
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
         dateTimeStamp = new Date().getTime() - (j*timeOffset*3600000);
         recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
-<<<<<<< HEAD
             ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
-=======
-            ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
         recordedTime = recordedTime;
->>>>>>> bf564d4ff9e041e2f6dceb5fa6411a74b8b5d610
 
         var reading = new temperature({
             dateTimeStamp: recordedTime,
@@ -253,13 +249,9 @@ exports.post_readings = function(req, res) {
     logger.debug('celsius reading: ' + celsius );
     logger.debug('voltage reading: ' + voltage );
 
-<<<<<<< HEAD
     var dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
         ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
-=======
-    //dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
-    //    ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
->>>>>>> bf564d4ff9e041e2f6dceb5fa6411a74b8b5d610
+
     var readingsData = new temperature({ dateTimeStamp: dateLocal,
             entityId: entityId,
             readingCelsius: celsius,
