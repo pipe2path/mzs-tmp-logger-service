@@ -9,9 +9,15 @@ logger.level = 'debug';
 
 var mongoClient = require('mongodb');
 var temperature = require('../models/temperature.js');
-//var settings = require('../common/settings.js');
-var entity = require('../models/entity.js');
+var settings = require('../common/settings.js');
+var entityObj = require('../models/entity.js');
 var sinchSms = require('sinch-sms');
+var async = require('async');
+var entity;
+var smsSettings;
+var dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
+    ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
+
 
 exports.get_readings = function(req, res) {
 
@@ -75,74 +81,105 @@ exports.post_readings_new = function(req, res) {
     var readings = prepareDataToPost(data)
     postDataToDatabase(readings);
 
-    // check for temperature limit and process alert
-
     res.setHeader('Access-Control-Allow-Origin','*');
 
     res.send("Temperature reading added");
 };
 
-function checkForAlert(entityId, celsius){
-    var alertTemp, alertFlag;
+function checkAndProcessAlert(entityId, celsius){
 
-    // get tempLimit from DB
-    getEntity(entityId, function(entity){
-        alertTemp = entity.alertTemp;
-        alertFlag = entity.alertFlag;
+    var entityItems = undefined;
+
+    // get entity temperature settings for the id
+    var entityPromise = getEntity(entityId);
+
+    entityPromise.then(function(result){
+        entityItems = result;
+        console.log(entityItems);
+        entity = new entityObj({
+            entityId: entityId,
+            alertPhone: entityItems[0].alertPhone,
+            alertMsg: entityItems[0].alertMsg,
+            alertTemp: entityItems[0].alertTemp,
+            alertFlag: entityItems[0].alertFlag,
+            alertSMSLastSent: entityItems[0].alertSMSLastSent
+        })
+
+        var alertLastSentConverted = (entity.alertSMSLastSent == '' ? new Date().getTime(): Date.parse(entity.alertSMSLastSent));
+        var dateNow = new Date().getTime();
+        var alertSMSTimeDiff = Math.abs(dateNow - alertLastSentConverted) / (60*60*1000);
+
+        // if alert flag is true and temperature is higher than what it should be and it's been 24 hours since the last alert
+        if (entity.alertFlag == "true" && celsius > entity.alertTemp && alertSMSTimeDiff >= 24){
+            processAlert(entityId, celsius, dateLocal);
+        }
+        return false;
     });
 
-    if (alertFlag == "true" && celsius > alertTemp ){
-        return true
-    }
-    return false;
 }
 
-var getEntity = function(entityId, callback){
-    //var result;
-    return mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-        if (err) {console.log(err)};
+function getEntity(entityId){
+    return new Promise(function(resolve, reject) {
+        mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function (err, db) {
+            if (err) {
+                console.log(err)
+                reject(err);
+            };
 
-        db.collection('entity').find({ 'entityId': entityId}).toArray(function(err, arr){
-            callback(arr)
+            db.collection('entity').find({'entityId': entityId}).toArray(function (err, arr) {
+                resolve(arr);
+            });
         });
     });
 }
 
 var getSettings = function(callback){
     var result;
-    mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
-        if (err) {console.log(err)};
-        result = db.collection('configSettings').find().toArray(function(err, arr){
-            callback(arr)
+    return new Promise(function(resolve, reject) {
+        mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function (err, db) {
+            if (err) {
+                console.log(err)
+                reject(err);
+            };
+            result = db.collection('configSettings').find().toArray(function (err, arr) {
+                resolve(arr)
+            });
         });
-    });
+    })
 }
 
 function processAlert(entityId, celsius, dateRecorded){
-    var configSettings =  new configSettings();
-    var entity = new Entity();
 
-    getSettings(function(items){
-        configSettings.configSettingsId = items[0].configSettingsId;
-        configSettings.sinchKey = items[0].sinchKey;
-        configSettings.sinchPwd = items[0].sinchPwd;
-    });
+    var settingsPromise = getSettings();
+    settingsPromise.then(function(result){
+        var items = result;
+        smsSettings = new settings({
+            configSettingsId: items[0].configSettingsId,
+            sinchKey: items[0].sinchKey,
+            sinchPwd: items[0].sinchPwd
+        });
 
-    getEntity(function(entityId, entityItems){
-        entity.id = entityId;
-        entity.alertPhone = entityItems.alertPhone;
-        entity.alertMsg = entityItems.alertMsg;
-    })
+         sinchSms = require('sinch-sms')({
+            key: smsSettings.sinchKey,
+            secret: smsSettings.sinchPwd
+         });
 
-    sinchSms = require('sinch-sms')({
-        key: sinchKey,
-        secret:sinchSecret
-    });
+         var smsMsg = entity.alertMsg + '  ' + celsius + ' recorded at ' + dateRecorded;
+         sinchSms.send(entity.alertPhone, smsMsg ).then(function (response) {
+            console.log('sinch sms response: ' + response.messageId);
+            }).fail(function (error) {
+                console.log('sinch sms error: ' + error);
+            });
 
-    sinchSms.send(entity.alertPhone, entity.alertMsg + '  ' + celsius + ' recorded at ' + dataRecorded).then(function (response) {
-        console.log(response);
-    }).fail(function (error) {
-        console.log(error);
+        // update database with latest alert timestamp
+        mongoClient.connect("mongodb://admin:mzslogger@ds151222.mlab.com:51222/mzs-logger", function(err, db) {
+            if (err) {console.log(err)};
+            db.collection("entity").updateOne(
+            { entityId: entityId},
+            {
+                $set: { "alertSMSLastSent" : dateLocal}
+            })
+        });
     });
 }
 
@@ -173,7 +210,12 @@ function prepareDataToPost(data){
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
         dateTimeStamp = new Date().getTime() - (j*timeOffset*3600000);
         recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
+<<<<<<< HEAD
             ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
+=======
+            ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
+        recordedTime = recordedTime;
+>>>>>>> bf564d4ff9e041e2f6dceb5fa6411a74b8b5d610
 
         var reading = new temperature({
             dateTimeStamp: recordedTime,
@@ -183,9 +225,7 @@ function prepareDataToPost(data){
         });
         readings.push(reading);
 
-        if (checkForAlert(entityId, celsius)){
-           processAlert(entityId, celsius, recordedTime);
-        }
+        checkAndProcessAlert (entityId, celsius);
     }
     return readings;
 }
@@ -213,8 +253,13 @@ exports.post_readings = function(req, res) {
     logger.debug('celsius reading: ' + celsius );
     logger.debug('voltage reading: ' + voltage );
 
+<<<<<<< HEAD
     var dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
         ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
+=======
+    //dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
+    //    ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
+>>>>>>> bf564d4ff9e041e2f6dceb5fa6411a74b8b5d610
     var readingsData = new temperature({ dateTimeStamp: dateLocal,
             entityId: entityId,
             readingCelsius: celsius,
