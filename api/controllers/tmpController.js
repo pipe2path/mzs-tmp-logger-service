@@ -57,13 +57,13 @@ var GetTemperatureData = function(callback){
                     as: 'temperatureDetails'
                 }
             }
-        ], function(err, res) {
+        ],function(err, res) {
             if (err) throw err;
             var temperatureSorted = insSortJsonArr(res, "dateTimeStamp", true);
             db.close();
 
             return callback(temperatureSorted);
-        });
+        }).cursor({});
     });
 };
 
@@ -171,9 +171,9 @@ function prepareDataToPost(data){
         entityId = data[i].entityId;
         celsius = data[i].tempinC;
         trueVoltage=parseFloat(data[i].voltage).toFixed(2) + voltageOffset;
-        dateTimeStamp = new Date().getTime() - (j*timeOffset*60000);
+        dateTimeStamp = new Date().getTime() - (j*timeOffset*3600000);
         recordedTime = (new Date ((new Date((new Date(new Date(dateTimeStamp))).toISOString() )).getTime() -
-            ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
+            ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
 
         var reading = new temperature({
             dateTimeStamp: recordedTime,
@@ -214,7 +214,7 @@ exports.post_readings = function(req, res) {
     logger.debug('voltage reading: ' + voltage );
 
     var dateLocal = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() -
-        ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ');
+        ((new Date()).getTimezoneOffset()*3600000))).toISOString().slice(0, 19).replace('T', ' ');
     var readingsData = new temperature({ dateTimeStamp: dateLocal,
             entityId: entityId,
             readingCelsius: celsius,
